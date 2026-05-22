@@ -1,0 +1,1587 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Berlin Player Guide</title>
+  <link rel="preconnect" href="https://fonts.googleapis.com" />
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link href="https://fonts.googleapis.com/css2?family=Bebas+Neue&family=DM+Sans:ital,wght@0,300;0,400;0,500;0,600;1,300&display=swap" rel="stylesheet" />
+  <link rel="stylesheet" href="https://unpkg.com/leaflet@1.9.4/dist/leaflet.css" />
+  <script src="https://unpkg.com/leaflet@1.9.4/dist/leaflet.js"></script>
+  <script src="https://maps.googleapis.com/maps/api/js?key=AIzaSyAJ2u_yNPKjNruAoCXBsuK40Kb1YRsZxA4&libraries=places" defer></script>
+  <style>
+    :root {
+      --bg:#0a0e1a; --surface:#111827; --card:#1a2235; --border:#243048;
+      --accent:#e94560; --blue:#3b82f6; --green:#22c55e; --gold:#f59e0b;
+      --purple:#a855f7; --white:#f1f5f9; --muted:#64748b;
+      --font-display:'Bebas Neue',sans-serif; --font-body:'DM Sans',sans-serif;
+      --radius:12px;
+    }
+    *,*::before,*::after{box-sizing:border-box;margin:0;padding:0}
+    html{scroll-behavior:smooth}
+    body{background:var(--bg);color:var(--white);font-family:var(--font-body);font-size:15px;line-height:1.6;min-height:100vh}
+    a{color:inherit;text-decoration:none}
+    button{cursor:pointer;border:none;background:none;font-family:inherit}
+    input,select,textarea{font-family:var(--font-body)}
+
+    /* NAV */
+    nav{position:sticky;top:0;z-index:200;background:rgba(10,14,26,.92);backdrop-filter:blur(12px);border-bottom:1px solid var(--border);display:flex;align-items:center;justify-content:space-between;padding:0 2rem;height:60px}
+    .nav-logo{font-family:var(--font-display);font-size:1.6rem;letter-spacing:2px}
+    .nav-logo span{color:var(--accent)}
+    .nav-links{display:flex;gap:.25rem}
+    .nav-btn{padding:.4rem 1rem;border-radius:6px;font-size:.85rem;font-weight:500;color:var(--muted);transition:all .2s}
+    .nav-btn:hover,.nav-btn.active{background:var(--card);color:var(--white)}
+    .nav-btn.active{color:var(--accent)}
+
+    /* HERO */
+    .hero{position:relative;padding:5rem 2rem 4rem;text-align:center;overflow:hidden}
+    .hero::before{content:'';position:absolute;inset:0;background:radial-gradient(ellipse 80% 60% at 50% 0%,rgba(233,69,96,.15) 0%,transparent 70%),radial-gradient(ellipse 50% 40% at 80% 50%,rgba(59,130,246,.08) 0%,transparent 60%);pointer-events:none}
+    .hero-tag{display:inline-block;background:rgba(233,69,96,.15);border:1px solid rgba(233,69,96,.3);color:var(--accent);font-size:.75rem;font-weight:600;letter-spacing:2px;text-transform:uppercase;padding:.3rem 1rem;border-radius:100px;margin-bottom:1.5rem}
+    .hero h1{font-family:var(--font-display);font-size:clamp(4rem,10vw,8rem);letter-spacing:4px;line-height:.9;margin-bottom:1rem}
+    .hero h1 span{color:var(--accent)}
+    .hero p{color:var(--muted);font-size:1rem;max-width:480px;margin:0 auto 2.5rem}
+    .hero-pills{display:flex;flex-wrap:wrap;gap:.5rem;justify-content:center}
+    .pill{display:flex;align-items:center;gap:.4rem;background:var(--card);border:1px solid var(--border);padding:.35rem .85rem;border-radius:100px;font-size:.82rem;color:var(--muted)}
+    .pill-dot{width:7px;height:7px;border-radius:50%;flex-shrink:0}
+
+    /* LAYOUT */
+    .section{max-width:1200px;margin:0 auto;padding:3rem 1.5rem}
+    .section-header{display:flex;align-items:baseline;gap:1rem;margin-bottom:2rem}
+    .section-title{font-family:var(--font-display);font-size:2.5rem;letter-spacing:2px}
+    .section-sub{color:var(--muted);font-size:.85rem}
+    .divider{height:1px;background:var(--border);margin:0 1.5rem}
+
+
+
+    /* Google Autocomplete dropdown fix */
+    .pac-container {
+      background: #1a2235 !important;
+      border: 1px solid #243048 !important;
+      border-radius: 8px !important;
+      box-shadow: 0 8px 32px rgba(0,0,0,0.5) !important;
+      margin-top: 4px !important;
+      font-family: 'DM Sans', sans-serif !important;
+      z-index: 99999 !important;
+    }
+    .pac-item {
+      background: #1a2235 !important;
+      border-top: 1px solid #243048 !important;
+      color: #f1f5f9 !important;
+      padding: 8px 12px !important;
+      cursor: pointer !important;
+      font-size: 0.88rem !important;
+    }
+    .pac-item:hover, .pac-item-selected {
+      background: #243048 !important;
+    }
+    .pac-item-query {
+      color: #f1f5f9 !important;
+      font-size: 0.88rem !important;
+    }
+    .pac-matched {
+      color: #3b82f6 !important;
+      font-weight: 700 !important;
+    }
+    .pac-icon { display: none !important; }
+    .pac-logo:after { display: none !important; }
+    .pac-secondary-text {
+      color: #64748b !important;
+      font-size: 0.78rem !important;
+    }
+
+    /* SEARCH BAR */
+    .search-wrap{position:relative;margin-bottom:1rem}
+    .search-input{width:100%;background:var(--card);border:1px solid var(--border);border-radius:100px;padding:.6rem 1rem .6rem 2.75rem;color:var(--white);font-size:.9rem;outline:none;transition:border .2s;font-family:var(--font-body)}
+    .search-input:focus{border-color:var(--accent)}
+    .search-input::placeholder{color:var(--muted)}
+    .search-icon{position:absolute;left:1rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:1rem;pointer-events:none}
+    .search-clear{position:absolute;right:.85rem;top:50%;transform:translateY(-50%);color:var(--muted);font-size:.9rem;cursor:pointer;display:none;background:none;border:none;padding:.1rem .3rem;border-radius:50%;transition:color .2s}
+    .search-clear:hover{color:var(--white)}
+    .search-count{font-size:.78rem;color:var(--muted);margin-bottom:.75rem}
+
+    /* MAP */
+    #map-section{padding:2rem 0 3rem}
+    .map-inner{max-width:1200px;margin:0 auto;padding:0 1.5rem}
+    .filter-bar{display:flex;flex-wrap:wrap;gap:.5rem;margin-bottom:1.25rem}
+    .filter-btn{display:flex;align-items:center;gap:.4rem;padding:.4rem 1rem;border-radius:100px;border:1px solid var(--border);font-size:.82rem;font-weight:500;color:var(--muted);background:var(--card);transition:all .2s}
+    .filter-btn.active,.filter-btn:hover{color:var(--white);border-color:transparent}
+    .map-layout{display:grid;grid-template-columns:1fr 340px;gap:1.25rem;height:580px}
+    @media(max-width:768px){.map-layout{grid-template-columns:1fr;height:auto}}
+    #map{border-radius:var(--radius);border:1px solid var(--border);height:100%;min-height:360px;z-index:1}
+    .place-list{display:flex;flex-direction:column;gap:.6rem;overflow-y:auto;padding-right:4px}
+    .place-list::-webkit-scrollbar{width:4px}
+    .place-list::-webkit-scrollbar-thumb{background:var(--border);border-radius:4px}
+
+    /* PLACE CARD */
+    .place-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;cursor:pointer;transition:all .2s;border-left:3px solid transparent}
+    .place-card:hover,.place-card.active{transform:translateX(2px)}
+    .place-card.hidden{display:none}
+    .place-card-img{width:100%;height:120px;object-fit:cover;object-position:center;display:block;aspect-ratio:1/1}
+    .place-card-img-placeholder{width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:var(--surface)}
+    .place-card-content{padding:.65rem .9rem}
+    .place-cat-badge{display:inline-block;font-size:.68rem;font-weight:600;letter-spacing:1px;text-transform:uppercase;padding:.1rem .45rem;border-radius:4px;margin-bottom:.35rem}
+    .place-card-name{font-weight:600;font-size:.9rem;margin-bottom:.15rem}
+    .place-card-addr{font-size:.78rem;color:var(--muted);margin-bottom:.3rem}
+    .place-card-tip{font-size:.78rem;color:var(--muted);font-style:italic;line-height:1.4}
+
+    /* PLANNING */
+    #planning-section{padding-top:0}
+    .month-header{display:flex;align-items:center;justify-content:space-between;margin-bottom:1.5rem;flex-wrap:wrap;gap:1rem}
+    .month-nav{display:flex;align-items:center;gap:1rem}
+    .month-nav-btn{width:36px;height:36px;border-radius:8px;background:var(--card);border:1px solid var(--border);color:var(--white);font-size:1.1rem;display:flex;align-items:center;justify-content:center;transition:all .2s}
+    .month-nav-btn:hover{background:var(--border)}
+    .month-name{font-family:var(--font-display);font-size:2rem;letter-spacing:2px;min-width:240px;text-align:center}
+    .calendar-grid{display:grid;grid-template-columns:repeat(7,1fr);gap:4px;margin-bottom:2rem}
+    .cal-day-header{text-align:center;font-size:.72rem;font-weight:600;letter-spacing:1px;color:var(--muted);padding:.5rem 0}
+    .cal-day-header.weekend{color:var(--blue)}
+    .cal-cell{background:var(--card);border:1px solid var(--border);border-radius:8px;min-height:80px;padding:.4rem .5rem;transition:all .15s}
+    @media(max-width:600px){.cal-cell{min-height:54px;padding:.3rem}}
+    .cal-cell.empty{background:transparent;border-color:transparent}
+    .cal-cell.weekend{background:rgba(59,130,246,.04)}
+    .cal-cell.today{border-color:var(--accent)}
+    .cal-day-num{font-size:.8rem;font-weight:600;color:var(--muted);margin-bottom:.3rem}
+    .cal-cell.weekend .cal-day-num{color:var(--blue)}
+    .cal-cell.today .cal-day-num{color:var(--accent)}
+    .cal-event-pill{display:block;font-size:.67rem;font-weight:600;padding:.15rem .35rem;border-radius:4px;margin-bottom:.2rem;white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
+    .events-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(280px,1fr));gap:1rem}
+    .event-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;transition:transform .2s}
+    .event-card:hover{transform:translateY(-2px)}
+    .event-card-top{height:4px}
+    .event-card-body{padding:1rem 1.1rem}
+    .event-card-meta{display:flex;align-items:center;justify-content:space-between;margin-bottom:.5rem}
+    .event-type-badge{font-size:.68rem;font-weight:700;letter-spacing:1.5px;text-transform:uppercase;color:var(--muted)}
+    .event-date-badge{font-size:.75rem;font-weight:600;color:var(--gold)}
+    .event-card-name{font-weight:700;font-size:1rem;margin-bottom:.4rem;line-height:1.3}
+    .event-card-location{font-size:.8rem;color:var(--muted);margin-bottom:.5rem}
+    .event-card-desc{font-size:.82rem;color:var(--muted);line-height:1.5;font-style:italic}
+
+    /* ── ADMIN ── */
+    #admin-page{display:none;min-height:100vh;background:var(--bg)}
+    #admin-page.visible{display:block}
+
+    /* Login overlay */
+    .admin-login{position:fixed;inset:0;z-index:1000;background:var(--bg);display:flex;align-items:center;justify-content:center}
+    .admin-login.hidden{display:none}
+    .login-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2.5rem;width:100%;max-width:380px;text-align:center}
+    .login-box h2{font-family:var(--font-display);font-size:2rem;letter-spacing:2px;margin-bottom:.4rem}
+    .login-box p{color:var(--muted);font-size:.85rem;margin-bottom:1.5rem}
+    .login-input{width:100%;background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;color:var(--white);font-size:1rem;margin-bottom:1rem;outline:none;transition:border .2s}
+    .login-input:focus{border-color:var(--accent)}
+    .login-error{color:var(--accent);font-size:.82rem;margin-bottom:.75rem;min-height:1.2rem}
+    .btn-primary{width:100%;background:var(--accent);color:#fff;border-radius:8px;padding:.75rem;font-size:.95rem;font-weight:600;transition:opacity .2s}
+    .btn-primary:hover{opacity:.85}
+
+    /* Admin layout */
+    .admin-nav{background:var(--surface);border-bottom:1px solid var(--border);padding:0 2rem;height:56px;display:flex;align-items:center;justify-content:space-between}
+    .admin-nav-title{font-family:var(--font-display);font-size:1.4rem;letter-spacing:2px;color:var(--accent)}
+    .admin-tabs{display:flex;gap:.25rem;margin-left:2rem}
+    .admin-tab{padding:.35rem .9rem;border-radius:6px;font-size:.85rem;font-weight:500;color:var(--muted);transition:all .2s}
+    .admin-tab.active{background:var(--card);color:var(--white)}
+    .btn-logout{font-size:.8rem;color:var(--muted);padding:.35rem .75rem;border-radius:6px;border:1px solid var(--border);transition:all .2s}
+    .btn-logout:hover{color:var(--accent);border-color:var(--accent)}
+
+    .admin-body{max-width:1100px;margin:0 auto;padding:2rem 1.5rem}
+    .admin-panel{display:none}
+    .admin-panel.active{display:block}
+
+    /* Cards grid */
+    .admin-grid{display:grid;grid-template-columns:repeat(auto-fill,minmax(300px,1fr));gap:1rem;margin-bottom:2rem}
+    .admin-place-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden;position:relative}
+    .admin-place-card-img{width:100%;aspect-ratio:1/1;object-fit:cover;object-position:center}
+    .admin-place-card-img-ph{width:100%;aspect-ratio:1/1;display:flex;align-items:center;justify-content:center;font-size:2.5rem;background:var(--surface)}
+    .admin-place-card-info{padding:.75rem 1rem}
+    .admin-place-card-name{font-weight:600;font-size:.95rem;margin-bottom:.2rem}
+    .admin-place-card-addr{font-size:.78rem;color:var(--muted)}
+    .admin-place-card-actions{display:flex;gap:.5rem;padding:.6rem 1rem;border-top:1px solid var(--border);background:var(--surface)}
+    .btn-edit{flex:1;padding:.4rem;border-radius:6px;font-size:.8rem;font-weight:500;background:rgba(59,130,246,.15);color:var(--blue);transition:background .2s}
+    .btn-edit:hover{background:rgba(59,130,246,.3)}
+    .btn-del{flex:1;padding:.4rem;border-radius:6px;font-size:.8rem;font-weight:500;background:rgba(233,69,96,.12);color:var(--accent);transition:background .2s}
+    .btn-del:hover{background:rgba(233,69,96,.25)}
+
+    /* Form */
+    .form-section{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);padding:1.5rem;margin-bottom:1.5rem}
+    .form-section-title{font-family:var(--font-display);font-size:1.4rem;letter-spacing:1px;margin-bottom:1.25rem;color:var(--accent)}
+    .form-grid{display:grid;grid-template-columns:1fr 1fr;gap:1rem}
+    @media(max-width:600px){.form-grid{grid-template-columns:1fr}}
+    .form-group{display:flex;flex-direction:column;gap:.4rem}
+    .form-group.full{grid-column:1/-1}
+    label{font-size:.8rem;font-weight:600;color:var(--muted);letter-spacing:.5px;text-transform:uppercase}
+    .form-input,.form-select,.form-textarea{background:var(--surface);border:1px solid var(--border);border-radius:8px;padding:.65rem .9rem;color:var(--white);font-size:.9rem;outline:none;transition:border .2s;width:100%}
+    .form-input:focus,.form-select:focus,.form-textarea:focus{border-color:var(--accent)}
+    .form-select option{background:var(--surface)}
+    .form-textarea{resize:vertical;min-height:80px}
+    .img-preview{width:100%;height:140px;object-fit:cover;border-radius:8px;border:1px solid var(--border);margin-top:.5rem;display:none}
+    .img-preview.visible{display:block}
+    .form-hint{font-size:.75rem;color:var(--muted);margin-top:.2rem}
+    .btn-row{display:flex;gap:.75rem;margin-top:1.25rem}
+    .btn-save{background:var(--accent);color:#fff;border-radius:8px;padding:.65rem 1.5rem;font-size:.9rem;font-weight:600;transition:opacity .2s}
+    .btn-save:hover{opacity:.85}
+    .btn-cancel{background:var(--surface);color:var(--muted);border:1px solid var(--border);border-radius:8px;padding:.65rem 1.5rem;font-size:.9rem;font-weight:600;transition:all .2s}
+    .btn-cancel:hover{color:var(--white)}
+
+    /* Categories */
+    .cat-list{display:flex;flex-direction:column;gap:.6rem;margin-bottom:1.25rem}
+    .cat-row{display:flex;align-items:center;gap:.75rem;background:var(--card);border:1px solid var(--border);border-radius:8px;padding:.6rem 1rem}
+    .cat-color-dot{width:14px;height:14px;border-radius:50%;flex-shrink:0}
+    .cat-emoji{font-size:1.1rem}
+    .cat-name{font-weight:600;font-size:.9rem;flex:1}
+    .cat-count{font-size:.78rem;color:var(--muted);margin-right:.5rem}
+    .btn-cat-del{padding:.25rem .6rem;border-radius:5px;font-size:.75rem;color:var(--accent);background:rgba(233,69,96,.1);transition:background .2s}
+    .btn-cat-del:hover{background:rgba(233,69,96,.25)}
+
+    /* Export panel */
+    .export-box{background:var(--surface);border:1px solid var(--border);border-radius:var(--radius);padding:1.25rem}
+    .export-box h3{font-family:var(--font-display);font-size:1.3rem;letter-spacing:1px;margin-bottom:.5rem}
+    .export-box p{font-size:.85rem;color:var(--muted);margin-bottom:1rem}
+    .export-steps{list-style:none;display:flex;flex-direction:column;gap:.5rem;margin-bottom:1.25rem}
+    .export-steps li{font-size:.85rem;color:var(--muted);display:flex;gap:.75rem;align-items:flex-start}
+    .step-num{background:var(--accent);color:#fff;width:20px;height:20px;border-radius:50%;font-size:.7rem;font-weight:700;display:flex;align-items:center;justify-content:center;flex-shrink:0;margin-top:.1rem}
+    .code-preview{background:#0d1117;border:1px solid var(--border);border-radius:8px;padding:1rem;font-family:monospace;font-size:.75rem;color:#7ee787;max-height:200px;overflow-y:auto;word-break:break-all;white-space:pre-wrap;margin-bottom:1rem}
+    .btn-copy{background:var(--green);color:#000;border-radius:8px;padding:.65rem 1.5rem;font-size:.9rem;font-weight:700;transition:opacity .2s}
+    .btn-copy:hover{opacity:.85}
+    .copy-success{color:var(--green);font-size:.82rem;margin-left:.75rem;opacity:0;transition:opacity .3s}
+    .copy-success.show{opacity:1}
+
+
+    /* SUGGESTION MODAL */
+    .modal-overlay{position:fixed;inset:0;z-index:500;background:rgba(0,0,0,.7);backdrop-filter:blur(4px);display:flex;align-items:center;justify-content:center;padding:1rem}
+    .modal-overlay.hidden{display:none}
+    .modal-box{background:var(--card);border:1px solid var(--border);border-radius:16px;padding:2rem;width:100%;max-width:460px;position:relative}
+    .modal-close{position:absolute;top:1rem;right:1rem;font-size:1.2rem;color:var(--muted);background:none;border:none;cursor:pointer;line-height:1}
+    .modal-title{font-family:var(--font-display);font-size:1.8rem;letter-spacing:2px;margin-bottom:.3rem}
+    .modal-sub{font-size:.85rem;color:var(--muted);margin-bottom:1.5rem}
+    .suggest-success{display:none;text-align:center;padding:1rem 0}
+    .suggest-success .big-emoji{font-size:3rem;margin-bottom:.75rem}
+    .suggest-success p{color:var(--muted);font-size:.9rem}
+
+    /* Suggest button floating */
+    .suggest-fab{position:fixed;bottom:1.5rem;right:1.5rem;z-index:99;background:var(--accent);color:#fff;border:none;border-radius:100px;padding:.75rem 1.25rem;font-size:.9rem;font-weight:700;box-shadow:0 4px 20px rgba(233,69,96,.4);cursor:pointer;display:flex;align-items:center;gap:.5rem;transition:transform .2s,box-shadow .2s}
+    .suggest-fab:hover{transform:translateY(-2px);box-shadow:0 6px 28px rgba(233,69,96,.5)}
+
+    /* Admin suggestions */
+    .suggestion-card{background:var(--card);border:1px solid var(--border);border-radius:var(--radius);overflow:hidden}
+    .suggestion-card-body{padding:.9rem 1rem}
+    .suggestion-card-name{font-weight:700;font-size:1rem;margin-bottom:.2rem}
+    .suggestion-card-meta{font-size:.78rem;color:var(--muted);margin-bottom:.5rem}
+    .suggestion-card-comment{font-size:.85rem;color:#94a3b8;font-style:italic;margin-bottom:.75rem}
+    .suggestion-card-actions{display:flex;gap:.6rem}
+    .btn-approve{flex:1;padding:.45rem;border-radius:6px;font-size:.82rem;font-weight:600;background:rgba(34,197,94,.15);color:var(--green);transition:background .2s}
+    .btn-approve:hover{background:rgba(34,197,94,.3)}
+    .btn-reject{flex:1;padding:.45rem;border-radius:6px;font-size:.82rem;font-weight:600;background:rgba(233,69,96,.12);color:var(--accent);transition:background .2s}
+    .btn-reject:hover{background:rgba(233,69,96,.25)}
+    .badge-pending{display:inline-block;background:var(--gold);color:#000;font-size:.68rem;font-weight:700;padding:.15rem .5rem;border-radius:100px;margin-left:.5rem}
+
+    /* FOOTER */
+    footer{border-top:1px solid var(--border);text-align:center;padding:2rem;color:var(--muted);font-size:.8rem}
+
+    /* Leaflet */
+    .leaflet-popup-content-wrapper{background:var(--card)!important;border:1px solid var(--border)!important;border-radius:var(--radius)!important;box-shadow:0 8px 32px rgba(0,0,0,.5)!important;color:var(--white)!important}
+    .leaflet-popup-tip{background:var(--card)!important}
+    .leaflet-popup-content{margin:12px 14px!important;font-family:var(--font-body)!important}
+    .popup-img{width:100%;height:90px;object-fit:cover;border-radius:6px;margin-bottom:8px}
+    .popup-name{font-weight:700;font-size:.95rem;margin-bottom:.3rem}
+    .popup-addr{font-size:.8rem;color:var(--muted);margin-bottom:.4rem}
+    .popup-tip{font-size:.8rem;color:#94a3b8;font-style:italic}
+    .leaflet-control-attribution{display:none!important}
+  </style>
+</head>
+<body>
+
+<!-- ══════════ PUBLIC SITE ══════════ -->
+<div id="public-page">
+
+  <nav>
+    <div class="nav-logo">BERLIN <span>GUIDE</span></div>
+    <div class="nav-links">
+      <a href="#map-section"      class="nav-btn active" id="nav-map">🗺️ Map</a>
+      <a href="#planning-section" class="nav-btn"        id="nav-plan">📅 Planning</a>
+      <a href="#" class="nav-btn" id="nav-admin-link" onclick="showAdminPage();return false">⚙️</a>
+    </div>
+  </nav>
+
+  <div class="hero">
+    <div class="hero-tag">Player City Guide · Season 2025–26</div>
+    <h1>DISCOVER<br/><span>BERLIN</span></h1>
+    <p>Everything you need to explore the city — the best spots, monthly events and activities.</p>
+    <div class="hero-pills" id="hero-pills"></div>
+  </div>
+
+  <div class="divider"></div>
+
+  <section id="map-section">
+    <div class="map-inner">
+      <div class="section-header">
+        <h2 class="section-title">ADDRESSES</h2>
+        <span class="section-sub">Click a pin or a card to explore</span>
+      </div>
+      <div class="search-wrap">
+        <span class="search-icon">🔍</span>
+        <input class="search-input" id="map-search" placeholder="Search by name, address, cuisine, vibe..." oninput="handleSearch(this.value)" />
+        <button class="search-clear" id="search-clear" onclick="clearSearch()">✕</button>
+      </div>
+      <div class="search-count" id="search-count"></div>
+    <div class="filter-bar" id="filter-bar"></div>
+      <div class="map-layout">
+        <div id="map"></div>
+        <div class="place-list" id="place-list"></div>
+      </div>
+    </div>
+  </section>
+
+  <div class="divider"></div>
+
+  <section id="planning-section">
+    <div class="section">
+      <div class="section-header">
+        <h2 class="section-title">PLANNING</h2>
+        <span class="section-sub">Monthly events &amp; activities</span>
+      </div>
+      <div class="month-header">
+        <div class="month-nav">
+          <button class="month-nav-btn" id="prev-month">&#8592;</button>
+          <div class="month-name" id="month-label">JUNE 2026</div>
+          <button class="month-nav-btn" id="next-month">&#8594;</button>
+        </div>
+      </div>
+      <div class="calendar-grid" id="calendar-grid"></div>
+      <div class="events-grid" id="events-grid"></div>
+    </div>
+  </section>
+
+
+  <!-- Suggest FAB -->
+  <button class="suggest-fab" onclick="openSuggestModal()">💡 Suggest a place</button>
+
+  <!-- Suggest Modal -->
+  <div class="modal-overlay hidden" id="suggest-modal">
+    <div class="modal-box">
+      <button class="modal-close" onclick="closeSuggestModal()">✕</button>
+      <div id="suggest-form-content">
+        <div class="modal-title">SUGGEST</div>
+        <div class="modal-sub">Know a great spot? Share it with the team! 🙌</div>
+        <div style="display:flex;flex-direction:column;gap:.9rem">
+          <div class="form-group">
+            <label>Your first name *</label>
+            <input class="form-input" id="s-player" placeholder="e.g. Marco" />
+          </div>
+          <div class="form-group">
+            <label>Place name *</label>
+            <input class="form-input" id="s-name" placeholder="e.g. Sissi Restaurant" />
+          </div>
+          <div class="form-group">
+            <label>Category</label>
+            <select class="form-select" id="s-cat"></select>
+          </div>
+          <div class="form-group">
+            <label>Address (optional)</label>
+            <input class="form-input" id="s-addr" placeholder="e.g. Invalidenstraße 50, Berlin" />
+          </div>
+          <div class="form-group">
+            <label>Why do you recommend it?</label>
+            <textarea class="form-textarea" id="s-comment" placeholder="Tell the team why it's worth a visit..." style="min-height:70px"></textarea>
+          </div>
+        </div>
+        <div style="margin-top:1.25rem;display:flex;gap:.75rem">
+          <button class="btn-save" onclick="submitSuggestion()" style="flex:1">Send suggestion 🚀</button>
+          <button class="btn-cancel" onclick="closeSuggestModal()">Cancel</button>
+        </div>
+        <div id="suggest-error" style="color:var(--accent);font-size:.82rem;margin-top:.6rem;min-height:1rem"></div>
+      </div>
+      <div class="suggest-success" id="suggest-success">
+        <div class="big-emoji">🎉</div>
+        <div style="font-family:var(--font-display);font-size:1.5rem;letter-spacing:2px;margin-bottom:.5rem">THANKS!</div>
+        <p>Your suggestion has been sent to the staff.<br/>They'll review it and add it to the map!</p>
+        <button class="btn-save" onclick="closeSuggestModal()" style="margin-top:1rem">Close</button>
+      </div>
+    </div>
+  </div>
+
+  <footer>Berlin Player Guide &nbsp;·&nbsp; Updated monthly by the staff &nbsp;·&nbsp; Season 2025–26</footer>
+</div>
+
+<!-- ══════════ ADMIN PAGE ══════════ -->
+<div id="admin-page">
+
+  <!-- Login -->
+  <div class="admin-login" id="admin-login">
+    <div class="login-box">
+      <h2>ADMIN</h2>
+      <p>Staff access only</p>
+      <input type="password" class="login-input" id="pw-input" placeholder="Password" />
+      <div class="login-error" id="login-error"></div>
+      <button class="btn-primary" onclick="doLogin()">Enter</button>
+      <br/><br/>
+      <a href="#" onclick="hideAdminPage();return false" style="font-size:.8rem;color:var(--muted)">← Back to site</a>
+    </div>
+  </div>
+
+  <!-- Admin UI (shown after login) -->
+  <div id="admin-ui" style="display:none">
+    <div class="admin-nav">
+      <div style="display:flex;align-items:center">
+        <span class="admin-nav-title">ADMIN</span>
+        <div class="admin-tabs">
+          <button class="admin-tab active" onclick="switchTab('places')">📍 Addresses</button>
+          <button class="admin-tab" onclick="switchTab('categories')">🏷️ Categories</button>
+          <button class="admin-tab" onclick="switchTab('planning')">📅 Planning</button>
+          <button class="admin-tab" onclick="switchTab('export')">💾 Save & Publish</button>
+        </div>
+      </div>
+      <button class="btn-logout" onclick="doLogout()">Log out</button>
+    </div>
+
+    <div class="admin-body">
+
+      <!-- PLACES TAB -->
+      <div class="admin-panel active" id="tab-places">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+          <h2 style="font-family:var(--font-display);font-size:1.6rem;letter-spacing:1px">Addresses</h2>
+          <button class="btn-save" onclick="openPlaceForm(null)">+ Add address</button>
+        </div>
+
+        <!-- Filter by cat -->
+        <div class="filter-bar" id="admin-filter-bar" style="margin-bottom:1.25rem"></div>
+        <div class="admin-grid" id="admin-place-grid"></div>
+
+        <!-- Place form (hidden by default) -->
+        <div id="place-form-wrap" style="display:none">
+          <div class="form-section">
+            <div class="form-section-title" id="place-form-title">Add address</div>
+            <!-- Google Places Search -->
+            <div class="form-group full" style="margin-bottom:1rem;padding:1rem;background:rgba(59,130,246,.07);border:1px solid rgba(59,130,246,.2);border-radius:8px">
+              <label style="color:var(--blue)">🔍 SEARCH ON GOOGLE (auto-fill)</label>
+              <div style="display:flex;gap:.6rem;margin-top:.4rem">
+                <input class="form-input" id="g-search" placeholder="Type a place name... (e.g. Han BBQ)" style="flex:1" autocomplete="off" />
+                <button class="btn-save" onclick="searchGooglePlace()" style="padding:.65rem 1rem;white-space:nowrap">Search</button>
+              </div>
+              <div id="g-results" style="display:none;margin-top:.6rem;display:flex;flex-direction:column;gap:.4rem"></div>
+              <div class="form-hint" style="margin-top:.4rem">Start typing → pick from the dropdown → fields fill automatically ✨</div>
+            </div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Name *</label>
+                <input class="form-input" id="f-name" placeholder="e.g. Brandenburg Gate" />
+              </div>
+              <div class="form-group">
+                <label>Category *</label>
+                <select class="form-select" id="f-cat"></select>
+              </div>
+              <div class="form-group full">
+                <label>Address *</label>
+                <input class="form-input" id="f-addr" placeholder="e.g. Pariser Platz, 10117" />
+              </div>
+              <div class="form-group">
+                <label>Latitude *</label>
+                <input class="form-input" id="f-lat" placeholder="e.g. 52.5163" type="number" step="any" />
+              </div>
+              <div class="form-group">
+                <label>Longitude *</label>
+                <input class="form-input" id="f-lng" placeholder="e.g. 13.3777" type="number" step="any" />
+              </div>
+              <div class="form-group full">
+                <label>Practical tip</label>
+                <input class="form-input" id="f-tip" placeholder="e.g. Book online in advance" />
+              </div>
+              <div class="form-group full">
+                <label>Photo URL</label>
+                <input class="form-input" id="f-img" placeholder="https://..." oninput="previewImg(this.value)" />
+                <div class="form-hint">Paste a direct image URL (e.g. from Google Images → right-click → Copy image address)</div>
+                <img class="img-preview" id="img-preview" src="" alt="" onerror="this.classList.remove('visible')" />
+              </div>
+            </div>
+            <div class="btn-row">
+              <button class="btn-save" onclick="savePlace()">Save</button>
+              <button class="btn-cancel" onclick="closePlaceForm()">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- CATEGORIES TAB -->
+      <div class="admin-panel" id="tab-categories">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+          <h2 style="font-family:var(--font-display);font-size:1.6rem;letter-spacing:1px">Categories</h2>
+          <button class="btn-save" onclick="openCatForm()">+ Add category</button>
+        </div>
+        <div class="cat-list" id="cat-list"></div>
+
+        <div id="cat-form-wrap" style="display:none">
+          <div class="form-section">
+            <div class="form-section-title">New category</div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Name *</label>
+                <input class="form-input" id="c-name" placeholder="e.g. Sport" />
+              </div>
+              <div class="form-group">
+                <label>Emoji *</label>
+                <input class="form-input" id="c-emoji" placeholder="e.g. 🏃" />
+              </div>
+              <div class="form-group">
+                <label>Color *</label>
+                <input class="form-input" id="c-color" type="color" value="#3b82f6" style="height:42px;padding:.2rem .4rem" />
+              </div>
+            </div>
+            <div class="btn-row">
+              <button class="btn-save" onclick="saveCat()">Save</button>
+              <button class="btn-cancel" onclick="closeCatForm()">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+      <!-- PLANNING TAB -->
+      <div class="admin-panel" id="tab-planning">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+          <h2 style="font-family:var(--font-display);font-size:1.6rem;letter-spacing:1px">Planning</h2>
+          <button class="btn-save" onclick="openEventForm(null)">+ Add event</button>
+        </div>
+
+        <div style="margin-bottom:1.25rem;display:flex;gap:.5rem;align-items:center;flex-wrap:wrap">
+          <label style="text-transform:none;font-size:.85rem;color:var(--muted)">Month:</label>
+          <select class="form-select" id="admin-month-select" onchange="renderAdminEvents()" style="width:auto"></select>
+          <button class="btn-save" onclick="openMonthForm()" style="padding:.4rem 1rem;font-size:.82rem">+ New month</button>
+        </div>
+
+        <div id="admin-events-list" style="display:flex;flex-direction:column;gap:.6rem;margin-bottom:1.5rem"></div>
+
+        <div id="event-form-wrap" style="display:none">
+          <div class="form-section">
+            <div class="form-section-title" id="event-form-title">Add event</div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Event name *</label>
+                <input class="form-input" id="e-name" placeholder="e.g. Carneval der Kulturen" />
+              </div>
+              <div class="form-group">
+                <label>Type label</label>
+                <input class="form-input" id="e-type" placeholder="e.g. FESTIVAL" />
+              </div>
+              <div class="form-group">
+                <label>Day (start) *</label>
+                <input class="form-input" id="e-date-start" type="number" min="1" max="31" placeholder="e.g. 12" />
+              </div>
+              <div class="form-group">
+                <label>Day (end, optional)</label>
+                <input class="form-input" id="e-date-end" type="number" min="1" max="31" placeholder="e.g. 15" />
+              </div>
+              <div class="form-group">
+                <label>Color</label>
+                <input class="form-input" id="e-color" type="color" value="#a855f7" style="height:42px;padding:.2rem .4rem" />
+              </div>
+              <div class="form-group">
+                <label>Location</label>
+                <input class="form-input" id="e-loc" placeholder="e.g. Kreuzberg" />
+              </div>
+              <div class="form-group full">
+                <label>Description</label>
+                <textarea class="form-textarea" id="e-desc" placeholder="Short description, practical info..."></textarea>
+              </div>
+            </div>
+            <div class="btn-row">
+              <button class="btn-save" onclick="saveEvent()">Save</button>
+              <button class="btn-cancel" onclick="closeEventForm()">Cancel</button>
+            </div>
+          </div>
+        </div>
+
+        <div id="month-form-wrap" style="display:none">
+          <div class="form-section">
+            <div class="form-section-title">Add month</div>
+            <div class="form-grid">
+              <div class="form-group">
+                <label>Year *</label>
+                <input class="form-input" id="m-year" type="number" value="2026" />
+              </div>
+              <div class="form-group">
+                <label>Month * (1=Jan … 12=Dec)</label>
+                <input class="form-input" id="m-month" type="number" min="1" max="12" placeholder="e.g. 7" />
+              </div>
+              <div class="form-group full">
+                <label>Label</label>
+                <input class="form-input" id="m-label" placeholder="e.g. JULY 2026" />
+              </div>
+            </div>
+            <div class="btn-row">
+              <button class="btn-save" onclick="saveMonth()">Save</button>
+              <button class="btn-cancel" onclick="document.getElementById('month-form-wrap').style.display='none'">Cancel</button>
+            </div>
+          </div>
+        </div>
+      </div>
+
+
+      <!-- SUGGESTIONS TAB -->
+      <div class="admin-panel" id="tab-suggestions">
+        <div style="display:flex;justify-content:space-between;align-items:center;margin-bottom:1.25rem">
+          <h2 style="font-family:var(--font-display);font-size:1.6rem;letter-spacing:1px">Player Suggestions</h2>
+          <button class="btn-save" onclick="loadSuggestions()" style="padding:.5rem 1rem;font-size:.82rem">🔄 Refresh</button>
+        </div>
+        <div id="suggestions-loading" style="color:var(--muted);font-size:.9rem;padding:1rem 0">Loading suggestions...</div>
+        <div id="suggestions-list" style="display:flex;flex-direction:column;gap:.75rem"></div>
+      </div>
+
+      <!-- EXPORT TAB -->
+      <div class="admin-panel" id="tab-export">
+        <div class="export-box">
+          <h3>💾 Save &amp; Publish</h3>
+          <p>Your changes are saved in your browser. To publish them online, copy the generated code and paste it into GitHub.</p>
+          <ol class="export-steps">
+            <li><span class="step-num">1</span>Click <strong>Generate code</strong> below</li>
+            <li><span class="step-num">2</span>Click <strong>Copy</strong></li>
+            <li><span class="step-num">3</span>Go to your GitHub repo → click <strong>index.html</strong> → click the ✏️ pencil → select all → paste → <strong>Commit changes</strong></li>
+          </ol>
+          <button class="btn-save" onclick="generateExport()" style="margin-bottom:1rem">⚙️ Generate code</button>
+          <div id="export-preview" style="display:none">
+            <div class="code-preview" id="code-preview">...</div>
+            <button class="btn-copy" onclick="copyExport()">📋 Copy all</button>
+            <span class="copy-success" id="copy-ok">✅ Copied!</span>
+          </div>
+        </div>
+      </div>
+
+    </div><!-- /admin-body -->
+  </div><!-- /admin-ui -->
+</div><!-- /admin-page -->
+
+<script>
+// ══════════════════════════════════════════════════════
+// ██████  A T A   (edit here to update the site)
+// ══════════════════════════════════════════════════════
+
+let CATEGORIES = [
+  { id:'visit',  label:'Visit',   emoji:'🏛️', color:'#3b82f6' },
+  { id:'eat',    label:'Eat',     emoji:'🍽️', color:'#f59e0b' },
+  { id:'lunch',  label:'Lunch',   emoji:'☕', color:'#22c55e' },
+  { id:'out',    label:'Go Out',  emoji:'🍺', color:'#a855f7' },
+];
+
+let PLACES = [
+  { id:'p1',  cat:'visit', name:'Brandenburg Gate',      addr:'Pariser Platz, 10117',              tip:'Arrive early morning to avoid crowds',              img:'', lat:52.5163, lng:13.3777 },
+  { id:'p2',  cat:'visit', name:'Museum Island',         addr:'Bodestraße 1, 10178',               tip:'Get the Berlin Museum Pass for 3 days',             img:'', lat:52.5196, lng:13.4013 },
+  { id:'p3',  cat:'visit', name:'East Side Gallery',     addr:'Mühlenstraße 3-100',                tip:'2km of murals on the Berlin Wall',                  img:'', lat:52.5051, lng:13.4393 },
+  { id:'p4',  cat:'visit', name:'Reichstag',             addr:'Platz der Republik 1',              tip:'Book online in advance – free!',                    img:'', lat:52.5186, lng:13.3762 },
+  { id:'p5',  cat:'visit', name:'Potsdamer Platz',       addr:'Potsdamer Platz, 10785',            tip:'Modern heart of Berlin',                            img:'', lat:52.5096, lng:13.3761 },
+  { id:'p6',  cat:'visit', name:'Charlottenburg Palace', addr:'Spandauer Damm 10-22',              tip:'Stunning garden, entry ~€12',                       img:'', lat:52.5208, lng:13.2957 },
+  { id:'p7',  cat:'eat',   name:'Lokal',                 addr:'Linienstraße 160, Mitte',           tip:'Modern Berlin cuisine, book ahead',                 img:'', lat:52.5275, lng:13.3987 },
+  { id:'p8',  cat:'eat',   name:"Mustafa's Gemüse Kebap",addr:'Mehringdamm 32, Kreuzberg',         tip:'Queue is inevitable, totally worth it',             img:'', lat:52.4936, lng:13.3882 },
+  { id:'p9',  cat:'eat',   name:'Nobelhart & Schmutzig', addr:'Friedrichstraße 218',               tip:'Michelin starred, local-only, book well ahead',     img:'', lat:52.5037, lng:13.3876 },
+  { id:'p10', cat:'eat',   name:'Curry 36',              addr:'Mehringdamm 36, Kreuzberg',         tip:'The unmissable Berlin currywurst spot',             img:'', lat:52.4932, lng:13.3881 },
+  { id:'p11', cat:'eat',   name:'Ora',                   addr:'Oranienstraße 14, Kreuzberg',       tip:'World cuisine in a former pharmacy',                img:'', lat:52.5010, lng:13.4208 },
+  { id:'p12', cat:'eat',   name:'Grill Royal',           addr:'Friedrichstraße 105b',              tip:'Premium steakhouse on the Spree river',            img:'', lat:52.5243, lng:13.3886 },
+  { id:'p13', cat:'lunch', name:'Café Einstein',         addr:'Kurfürstenstraße 58',               tip:'Viennese-style, perfect weekend brunch',            img:'', lat:52.5069, lng:13.3584 },
+  { id:'p14', cat:'lunch', name:'The Store Kitchen',     addr:'Weinmeisterstraße 8, Mitte',        tip:'Trendy brunch inside a bookstore',                  img:'', lat:52.5246, lng:13.4023 },
+  { id:'p15', cat:'lunch', name:'Schwarzes Café',        addr:'Kantstraße 148, Charlottenburg',    tip:'Open 24/7, non-stop brunch menu',                   img:'', lat:52.5055, lng:13.3147 },
+  { id:'p16', cat:'lunch', name:'Roamers',               addr:'Pannierstraße 64, Neukölln',        tip:'Hipster brunch, warm atmosphere',                   img:'', lat:52.4801, lng:13.4326 },
+  { id:'p17', cat:'lunch', name:'Five Elephant',         addr:'Reichenberger Str. 101',            tip:"Best coffee in Berlin, legendary cheesecake",       img:'', lat:52.4988, lng:13.4261 },
+  { id:'p18', cat:'lunch', name:'Prinzessinnengarten',   addr:'Moritzplatz, Kreuzberg',            tip:'Community garden, outdoor café in summer',          img:'', lat:52.5018, lng:13.4147 },
+  { id:'p19', cat:'out',   name:'Berghain',              addr:'Am Wriezener Bahnhof, 10243',       tip:'THE club, strict dress code, long queue',           img:'', lat:52.5114, lng:13.4431 },
+  { id:'p20', cat:'out',   name:"Clärchens Ballhaus",    addr:'Auguststraße 24, Mitte',            tip:'Historic ballroom, one-of-a-kind atmosphere',       img:'', lat:52.5270, lng:13.3976 },
+  { id:'p21', cat:'out',   name:'Watergate',             addr:'Falckensteinstraße 49',             tip:'Club on the Spree, exceptional terrace',            img:'', lat:52.5019, lng:13.4382 },
+  { id:'p22', cat:'out',   name:'Prater Garten',         addr:'Kastanienallee 7, Prenzlauer Berg', tip:"Berlin's oldest beer garden (1837)",                img:'', lat:52.5377, lng:13.4125 },
+  { id:'p23', cat:'out',   name:'Bar Zentral',           addr:'Yorkstraße 82, Schöneberg',         tip:'Creative cocktails in a vaulted cellar',            img:'', lat:52.4856, lng:13.3608 },
+  { id:'p24', cat:'out',   name:'Soho House Bar',        addr:'Torstraße 1, Mitte',                tip:'Panoramic rooftop views over Berlin',               img:'', lat:52.5289, lng:13.4012 },
+];
+
+let MONTHS = [
+  {
+    id:'m1', year:2026, month:5, label:'JUNE 2026',
+    events:[
+      { id:'e1',  date:1,  dateEnd:1,  color:'#e94560', type:'TEAM',     name:'Friendly Match',         location:'TBC',                                  desc:'Friendly match at the start of the month. Details TBC – check with the staff.' },
+      { id:'e2',  date:5,  dateEnd:5,  color:'#22c55e', type:'ACTIVITY', name:'Tiergarten Bike Ride',   location:'Tiergarten, Berlin',                   desc:'Group bike ride around Tiergarten park. Bring water and sunscreen!' },
+      { id:'e3',  date:6,  dateEnd:6,  color:'#f59e0b', type:'TEAM',     name:'Team Dinner',            location:'Lokal – Linienstraße 160, Mitte',      desc:'Monthly team dinner. Reservation confirmed. Be there at 7:30pm.' },
+      { id:'e4',  date:12, dateEnd:15, color:'#a855f7', type:'FESTIVAL', name:'Carneval der Kulturen',  location:'Kreuzberg – Blücherplatz',             desc:'The biggest multicultural festival in Berlin. Giant parade on Sunday, concerts, street food from around the world. Free!' },
+      { id:'e5',  date:20, dateEnd:21, color:'#3b82f6', type:'EVENT',    name:'Fête de la Musique',     location:'Citywide – Mitte, Prenzlauer Berg…',   desc:'Free concerts throughout the city. Mitte, Prenzlauer Berg and Kreuzberg are the most lively neighbourhoods.' },
+      { id:'e6',  date:27, dateEnd:28, color:'#f97316', type:'PRIDE',    name:'Christopher Street Day', location:'Unter den Linden → Brandenburger Tor', desc:"Berlin's Pride, one of the largest in Europe. Parade on Saturday, concerts and parties across the city centre." },
+    ]
+  },
+  {
+    id:'m2', year:2026, month:6, label:'JULY 2026',
+    events:[
+      { id:'e7', date:4,  dateEnd:4,  color:'#22c55e', type:'ACTIVITY', name:'Wannsee Lake Day',     location:'Wannsee, Berlin',    desc:'Swimming and relaxing at Wannsee lake. Great spot for a day off!' },
+      { id:'e8', date:11, dateEnd:11, color:'#f59e0b', type:'TEAM',     name:'Team Dinner',          location:'TBC',                desc:'Monthly team dinner – venue TBC.' },
+      { id:'e9', date:18, dateEnd:19, color:'#3b82f6', type:'FESTIVAL', name:'Berlin Beer Festival', location:'Karl-Marx-Allee',    desc:"One of the world's largest open-air beer festivals. 60+ breweries from around the world." },
+    ]
+  },
+];
+
+
+// -- GOOGLE SHEETS CONFIG --
+const SHEET_ID = '1H3twhKp0LnDh9kA1VI6C0wPm64NZ6pKUQz8FJt_1G2M';
+const SERVICE_ACCOUNT_EMAIL = 'berlin-guide@berlin-guide-497019.iam.gserviceaccount.com';
+// Note: Sheets writes go via a lightweight proxy approach using Apps Script
+// Deploy URL below (set after deploying Apps Script):
+const APPS_SCRIPT_URL = 'https://script.google.com/macros/s/AKfycbyBqEjtihEAtRuhTYCp_euM593oMFm88o3JSmMXPOg-ufwhdJW4Sjcs1jllANDEch9s7A/exec';
+
+
+// -- SUPABASE CONFIG --
+const SUPABASE_URL = 'https://cchmajyucnhnoiifwumk.supabase.co';
+const SUPABASE_KEY = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6ImNjaG1hanl1Y25obm9paWZ3dW1rIiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzk0NDE0NDAsImV4cCI6MjA5NTAxNzQ0MH0.N9NavwJg6LKe65y3nFtTozT4e7sOcWYKkbSfYX4JGHQ';
+
+async function sbFetch(path, options = {}) {
+  const res = await fetch(SUPABASE_URL + path, {
+    ...options,
+    headers: {
+      'apikey': SUPABASE_KEY,
+      'Authorization': 'Bearer ' + SUPABASE_KEY,
+      'Content-Type': 'application/json',
+      'Prefer': 'return=representation',
+      ...(options.headers || {})
+    }
+  });
+  if (!res.ok) {
+    const err = await res.text();
+    throw new Error('Supabase error: ' + err);
+  }
+  return res.json().catch(() => null);
+}
+
+async function loadPlacesFromSupabase() {
+  try {
+    const data = await sbFetch('/rest/v1/places?select=*&order=created_at.asc');
+    if (data && data.length > 0) {
+      PLACES = data;
+      rebuildPublicSite();
+      renderAdminPlaces();
+      console.log('Loaded', data.length, 'places from Supabase');
+    }
+  } catch(e) {
+    console.warn('Could not load from Supabase, using default data:', e);
+  }
+}
+
+async function savePlaceToSupabase(place) {
+  try {
+    // Upsert (insert or update)
+    await sbFetch('/rest/v1/places', {
+      method: 'POST',
+      headers: { 'Prefer': 'resolution=merge-duplicates,return=representation' },
+      body: JSON.stringify(place)
+    });
+    console.log('Saved to Supabase:', place.name);
+    return true;
+  } catch(e) {
+    console.error('Could not save to Supabase:', e);
+    return false;
+  }
+}
+
+async function deletePlaceFromSupabase(id) {
+  try {
+    await sbFetch('/rest/v1/places?id=eq.' + encodeURIComponent(id), {
+      method: 'DELETE'
+    });
+    console.log('Deleted from Supabase:', id);
+    return true;
+  } catch(e) {
+    console.error('Could not delete from Supabase:', e);
+    return false;
+  }
+}
+
+// -- ADMIN PASSWORD (change this!) --
+const ADMIN_PASSWORD = 'Pick26!';
+
+// ══════════════════════════════════════════════════════
+// HELPERS
+// ══════════════════════════════════════════════════════
+function uid(){ return 'id' + Math.random().toString(36).slice(2,9); }
+function getCat(id){ return CATEGORIES.find(c=>c.id===id) || {label:id,emoji:'📍',color:'#888'}; }
+
+// ══════════════════════════════════════════════════════
+// PUBLIC SITE — MAP
+// ══════════════════════════════════════════════════════
+let leafletMap, mapMarkers=[];
+
+function buildHeroPills(){
+  const el = document.getElementById('hero-pills');
+  el.innerHTML = CATEGORIES.map(c=>`
+    <span class="pill">
+      <span class="pill-dot" style="background:${c.color}"></span>${c.emoji} ${c.label}
+    </span>`).join('');
+}
+
+function buildFilters(){
+  const fb = document.getElementById('filter-bar');
+  fb.innerHTML = `<button class="filter-btn active" data-cat="all" onclick="filterMap('all',this)">🌍 All</button>` +
+    CATEGORIES.map(c=>`<button class="filter-btn" data-cat="${c.id}" onclick="filterMap('${c.id}',this)">${c.emoji} ${c.label}</button>`).join('');
+}
+
+function initMap(){
+  leafletMap = L.map('map',{center:[52.505,13.39],zoom:12,zoomControl:true});
+  L.tileLayer('https://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}{r}.png',{subdomains:'abcd',maxZoom:19}).addTo(leafletMap);
+  buildMapMarkers();
+}
+
+function makeLeafletIcon(cat){
+  const c=getCat(cat);
+  return L.divIcon({
+    html:`<div style="width:32px;height:32px;border-radius:50%;background:${c.color};border:2px solid rgba(255,255,255,.3);display:flex;align-items:center;justify-content:center;font-size:14px;box-shadow:0 2px 8px rgba(0,0,0,.5)">${c.emoji}</div>`,
+    className:'',iconSize:[32,32],iconAnchor:[16,16],popupAnchor:[0,-18]
+  });
+}
+
+function buildMapMarkers(){
+  mapMarkers.forEach(({marker})=>leafletMap.removeLayer(marker));
+  mapMarkers=[];
+  const list=document.getElementById('place-list');
+  list.innerHTML='';
+
+  PLACES.forEach((p,i)=>{
+    const c=getCat(p.cat);
+    const imgHtml = p.img ? `<img class="popup-img" src="${p.img}" alt="${p.name}" onerror="this.style.display='none'"/>` : '';
+    const marker=L.marker([p.lat,p.lng],{icon:makeLeafletIcon(p.cat)})
+      .addTo(leafletMap)
+      .bindPopup(`${imgHtml}<div class="popup-name">${p.name}</div><div class="popup-addr">📍 ${p.addr}</div><div class="popup-tip">💡 ${p.tip}</div>`,{maxWidth:220});
+
+    const card=document.createElement('div');
+    card.className='place-card';
+    card.dataset.cat=p.cat;
+    card.style.borderLeftColor=c.color;
+    card.innerHTML=`
+      ${p.img?`<img class="place-card-img" src="${p.img}" alt="${p.name}" onerror="this.style.display='none'"/>`:
+               `<div class="place-card-img-placeholder">${c.emoji}</div>`}
+      <div class="place-card-content">
+        <span class="place-cat-badge" style="background:${c.color}22;color:${c.color}">${c.emoji} ${c.label}</span>
+        <div class="place-card-name">${p.name}</div>
+        <div class="place-card-addr">📍 ${p.addr}</div>
+        <div class="place-card-tip">💡 ${p.tip}</div>
+      </div>`;
+    card.addEventListener('click',()=>{
+      leafletMap.setView([p.lat,p.lng],15,{animate:true});
+      marker.openPopup();
+      document.querySelectorAll('.place-card').forEach(c=>c.classList.remove('active'));
+      card.classList.add('active');
+    });
+    list.appendChild(card);
+    mapMarkers.push({marker,card,cat:p.cat,place:p});
+  });
+}
+
+function filterMap(cat,btn){
+  activeFilter=cat;
+  document.querySelectorAll('#filter-bar .filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  applyFilters();
+}
+
+// ══════════════════════════════════════════════════════
+// PUBLIC SITE — PLANNING
+// ══════════════════════════════════════════════════════
+let currentMonthIdx=0;
+
+function renderCalendar(){
+  const data=MONTHS[currentMonthIdx];
+  if(!data){document.getElementById('month-label').textContent='—';return;}
+  document.getElementById('month-label').textContent=data.label;
+  const grid=document.getElementById('calendar-grid');
+  const evGrid=document.getElementById('events-grid');
+  grid.innerHTML=''; evGrid.innerHTML='';
+
+  ['MON','TUE','WED','THU','FRI','SAT','SUN'].forEach((d,i)=>{
+    const el=document.createElement('div');
+    el.className='cal-day-header'+(i>=5?' weekend':'');
+    el.textContent=d; grid.appendChild(el);
+  });
+
+  const firstDay=new Date(data.year,data.month,1).getDay();
+  const offset=(firstDay+6)%7;
+  const daysInMonth=new Date(data.year,data.month+1,0).getDate();
+  const today=new Date();
+
+  // Expand multi-day events
+  const expandedEvents=[];
+  data.events.forEach(ev=>{
+    const end=ev.dateEnd||ev.date;
+    for(let d=ev.date;d<=end;d++) expandedEvents.push({...ev,date:d});
+  });
+
+  for(let i=0;i<offset;i++){const el=document.createElement('div');el.className='cal-cell empty';grid.appendChild(el);}
+  for(let d=1;d<=daysInMonth;d++){
+    const dow=(offset+d-1)%7;
+    const isWeekend=dow>=5;
+    const isToday=today.getFullYear()===data.year&&today.getMonth()===data.month&&today.getDate()===d;
+    const cell=document.createElement('div');
+    cell.className='cal-cell'+(isWeekend?' weekend':'')+(isToday?' today':'');
+    const num=document.createElement('div'); num.className='cal-day-num'; num.textContent=d; cell.appendChild(num);
+    expandedEvents.filter(e=>e.date===d).forEach(ev=>{
+      const pill=document.createElement('span'); pill.className='cal-event-pill';
+      pill.style.background=ev.color+'33'; pill.style.color=ev.color; pill.textContent=ev.name;
+      cell.appendChild(pill);
+    });
+    grid.appendChild(cell);
+  }
+
+  // Event cards — one per unique event
+  const seen=new Set();
+  data.events.forEach(ev=>{
+    if(seen.has(ev.id)||!ev.desc) return; seen.add(ev.id);
+    const months=['Jan','Feb','Mar','Apr','May','Jun','Jul','Aug','Sep','Oct','Nov','Dec'];
+    const dateStr=ev.dateEnd&&ev.dateEnd!==ev.date?`${months[data.month]} ${ev.date}–${ev.dateEnd}`:`${months[data.month]} ${ev.date}`;
+    const card=document.createElement('div'); card.className='event-card';
+    card.innerHTML=`
+      <div class="event-card-top" style="background:${ev.color}"></div>
+      <div class="event-card-body">
+        <div class="event-card-meta">
+          <span class="event-type-badge">${ev.type}</span>
+          <span class="event-date-badge">${dateStr}</span>
+        </div>
+        <div class="event-card-name">${ev.name}</div>
+        <div class="event-card-location">📍 ${ev.location}</div>
+        <div class="event-card-desc">${ev.desc}</div>
+      </div>`;
+    evGrid.appendChild(card);
+  });
+}
+
+document.getElementById('prev-month').addEventListener('click',()=>{if(currentMonthIdx>0){currentMonthIdx--;renderCalendar();}});
+document.getElementById('next-month').addEventListener('click',()=>{if(currentMonthIdx<MONTHS.length-1){currentMonthIdx++;renderCalendar();}});
+
+// ══════════════════════════════════════════════════════
+// ADMIN — LOGIN
+// ══════════════════════════════════════════════════════
+function showAdminPage(){
+  document.getElementById('public-page').style.display='none';
+  document.getElementById('admin-page').classList.add('visible');
+  document.getElementById('pw-input').value='';
+  document.getElementById('login-error').textContent='';
+}
+function hideAdminPage(){
+  document.getElementById('public-page').style.display='';
+  document.getElementById('admin-page').classList.remove('visible');
+}
+function doLogin(){
+  const pw=document.getElementById('pw-input').value;
+  if(pw===ADMIN_PASSWORD){
+    document.getElementById('admin-login').classList.add('hidden');
+    document.getElementById('admin-ui').style.display='block';
+    renderAdminPlaces(); renderCatList(); renderAdminMonthSelect(); renderAdminEvents();
+  } else {
+    document.getElementById('login-error').textContent='Wrong password.';
+  }
+}
+document.getElementById('pw-input').addEventListener('keydown',e=>{if(e.key==='Enter')doLogin();});
+function doLogout(){
+  document.getElementById('admin-ui').style.display='none';
+  document.getElementById('admin-login').classList.remove('hidden');
+  hideAdminPage();
+}
+
+// ══════════════════════════════════════════════════════
+// ADMIN — TABS
+// ══════════════════════════════════════════════════════
+function switchTab(name){
+  document.querySelectorAll('.admin-panel').forEach(p=>p.classList.remove('active'));
+  document.querySelectorAll('.admin-tab').forEach(t=>t.classList.remove('active'));
+  document.getElementById('tab-'+name).classList.add('active');
+  event.target.classList.add('active');
+}
+
+// ══════════════════════════════════════════════════════
+// ADMIN — PLACES
+// ══════════════════════════════════════════════════════
+let editingPlaceId=null;
+let adminPlaceFilter='all';
+
+function renderAdminFilters(){
+  const fb=document.getElementById('admin-filter-bar');
+  fb.innerHTML=`<button class="filter-btn ${adminPlaceFilter==='all'?'active':''}" onclick="setAdminFilter('all',this)">All</button>`+
+    CATEGORIES.map(c=>`<button class="filter-btn ${adminPlaceFilter===c.id?'active':''}" onclick="setAdminFilter('${c.id}',this)">${c.emoji} ${c.label}</button>`).join('');
+}
+function setAdminFilter(cat,btn){
+  adminPlaceFilter=cat;
+  document.querySelectorAll('#admin-filter-bar .filter-btn').forEach(b=>b.classList.remove('active'));
+  btn.classList.add('active');
+  renderAdminPlaces();
+}
+
+function renderAdminPlaces(){
+  renderAdminFilters();
+  const grid=document.getElementById('admin-place-grid');
+  const filtered=adminPlaceFilter==='all'?PLACES:PLACES.filter(p=>p.cat===adminPlaceFilter);
+  grid.innerHTML=filtered.map(p=>{
+    const c=getCat(p.cat);
+    return `<div class="admin-place-card">
+      ${p.img?`<img class="admin-place-card-img" src="${p.img}" alt="${p.name}" onerror="this.style.display='none'"/>`:
+              `<div class="admin-place-card-img-ph">${c.emoji}</div>`}
+      <div class="admin-place-card-info">
+        <span class="place-cat-badge" style="background:${c.color}22;color:${c.color};font-size:.68rem;padding:.1rem .4rem;border-radius:4px;font-weight:700;letter-spacing:1px">${c.emoji} ${c.label}</span>
+        <div class="admin-place-card-name">${p.name}</div>
+        <div class="admin-place-card-addr">${p.addr}</div>
+      </div>
+      <div class="admin-place-card-actions">
+        <button class="btn-edit" onclick="openPlaceForm('${p.id}')">✏️ Edit</button>
+        <button class="btn-del" onclick="deletePlace('${p.id}')">🗑 Delete</button>
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function openPlaceForm(id){
+  editingPlaceId=id;
+  const form=document.getElementById('place-form-wrap');
+  form.style.display='block';
+  form.scrollIntoView({behavior:'smooth'});
+  // Populate cat select
+  document.getElementById('f-cat').innerHTML=CATEGORIES.map(c=>`<option value="${c.id}">${c.emoji} ${c.label}</option>`).join('');
+  if(id){
+    const p=PLACES.find(p=>p.id===id);
+    document.getElementById('place-form-title').textContent='Edit address';
+    document.getElementById('f-name').value=p.name;
+    document.getElementById('f-cat').value=p.cat;
+    document.getElementById('f-addr').value=p.addr;
+    document.getElementById('f-lat').value=p.lat;
+    document.getElementById('f-lng').value=p.lng;
+    document.getElementById('f-tip').value=p.tip;
+    document.getElementById('f-img').value=p.img||'';
+    previewImg(p.img||'');
+  } else {
+    document.getElementById('place-form-title').textContent='Add address';
+    ['f-name','f-addr','f-lat','f-lng','f-tip','f-img'].forEach(id=>document.getElementById(id).value='');
+    previewImg('');
+  }
+}
+function closePlaceForm(){
+  document.getElementById('place-form-wrap').style.display='none';
+  editingPlaceId=null;
+}
+function previewImg(url){
+  const img=document.getElementById('img-preview');
+  if(url){img.src=url;img.classList.add('visible');}else{img.classList.remove('visible');}
+}
+async function savePlace(){
+  const name=document.getElementById('f-name').value.trim();
+  const addr=document.getElementById('f-addr').value.trim();
+  const lat=parseFloat(document.getElementById('f-lat').value);
+  const lng=parseFloat(document.getElementById('f-lng').value);
+  if(!name||!addr||isNaN(lat)||isNaN(lng)){alert('Please fill in name, address, latitude and longitude.');return;}
+  const data={
+    cat:document.getElementById('f-cat').value,
+    name,addr,lat,lng,
+    tip:document.getElementById('f-tip').value.trim(),
+    img:document.getElementById('f-img').value.trim(),
+  };
+
+  const btn = document.querySelector('#place-form-wrap .btn-save');
+  btn.textContent = '⏳ Saving...';
+  btn.disabled = true;
+
+  let place;
+  if(editingPlaceId){
+    const idx=PLACES.findIndex(p=>p.id===editingPlaceId);
+    place = {...PLACES[idx],...data};
+    PLACES[idx] = place;
+  } else {
+    place = {id:uid(),...data};
+    PLACES.push(place);
+  }
+
+  const ok = await savePlaceToSupabase(place);
+  btn.textContent = 'Save';
+  btn.disabled = false;
+
+  if(ok) {
+    closePlaceForm();
+    renderAdminPlaces();
+    rebuildPublicSite();
+  } else {
+    alert('Saved locally but could not sync to database. Check your connection.');
+    closePlaceForm();
+    renderAdminPlaces();
+    rebuildPublicSite();
+  }
+}
+async function deletePlace(id){
+  if(!confirm('Delete this address?'))return;
+  PLACES=PLACES.filter(p=>p.id!==id);
+  renderAdminPlaces();
+  rebuildPublicSite();
+  await deletePlaceFromSupabase(id);
+}
+
+// ══════════════════════════════════════════════════════
+// ADMIN — CATEGORIES
+// ══════════════════════════════════════════════════════
+function renderCatList(){
+  const list=document.getElementById('cat-list');
+  list.innerHTML=CATEGORIES.map(c=>{
+    const count=PLACES.filter(p=>p.cat===c.id).length;
+    return `<div class="cat-row">
+      <span class="cat-color-dot" style="background:${c.color}"></span>
+      <span class="cat-emoji">${c.emoji}</span>
+      <span class="cat-name">${c.label}</span>
+      <span class="cat-count">${count} address${count!==1?'es':''}</span>
+      <button class="btn-cat-del" onclick="deleteCat('${c.id}')">Delete</button>
+    </div>`;
+  }).join('');
+}
+function openCatForm(){ document.getElementById('cat-form-wrap').style.display='block'; }
+function closeCatForm(){ document.getElementById('cat-form-wrap').style.display='none'; }
+function saveCat(){
+  const name=document.getElementById('c-name').value.trim();
+  const emoji=document.getElementById('c-emoji').value.trim();
+  const color=document.getElementById('c-color').value;
+  if(!name||!emoji){alert('Please fill in name and emoji.');return;}
+  const id=name.toLowerCase().replace(/\s+/g,'-');
+  CATEGORIES.push({id,label:name,emoji,color});
+  closeCatForm();
+  renderCatList();
+  renderAdminPlaces();
+  buildFilters();
+  buildHeroPills();
+}
+function deleteCat(id){
+  const count=PLACES.filter(p=>p.cat===id).length;
+  if(count>0){alert(`Cannot delete: ${count} address(es) use this category. Reassign them first.`);return;}
+  if(!confirm('Delete this category?'))return;
+  CATEGORIES=CATEGORIES.filter(c=>c.id!==id);
+  renderCatList();
+  buildFilters();
+  buildHeroPills();
+}
+
+// ══════════════════════════════════════════════════════
+// ADMIN — PLANNING
+// ══════════════════════════════════════════════════════
+let editingEventId=null;
+let editingEventMonthId=null;
+
+function renderAdminMonthSelect(){
+  const sel=document.getElementById('admin-month-select');
+  sel.innerHTML=MONTHS.map(m=>`<option value="${m.id}">${m.label}</option>`).join('');
+}
+function getAdminMonth(){
+  const id=document.getElementById('admin-month-select').value;
+  return MONTHS.find(m=>m.id===id);
+}
+function renderAdminEvents(){
+  const m=getAdminMonth();
+  const list=document.getElementById('admin-events-list');
+  if(!m){list.innerHTML='<p style="color:var(--muted)">No months yet.</p>';return;}
+  if(m.events.length===0){list.innerHTML='<p style="color:var(--muted)">No events this month.</p>';return;}
+  list.innerHTML=m.events.map(ev=>{
+    const dateStr=ev.dateEnd&&ev.dateEnd!==ev.date?`${ev.date}–${ev.dateEnd}`:`${ev.date}`;
+    return `<div style="background:var(--card);border:1px solid var(--border);border-radius:8px;padding:.75rem 1rem;display:flex;align-items:center;gap:1rem">
+      <span style="width:10px;height:10px;border-radius:50%;background:${ev.color};flex-shrink:0"></span>
+      <span style="font-size:.8rem;font-weight:700;color:var(--muted);min-width:70px">${dateStr}</span>
+      <span style="font-weight:600;flex:1">${ev.name}</span>
+      <span style="font-size:.78rem;color:var(--muted)">${ev.type}</span>
+      <button class="btn-edit" style="padding:.3rem .7rem" onclick="openEventForm('${ev.id}')">✏️</button>
+      <button class="btn-del" style="padding:.3rem .7rem" onclick="deleteEvent('${m.id}','${ev.id}')">🗑</button>
+    </div>`;
+  }).join('');
+}
+
+function openEventForm(id){
+  editingEventId=id;
+  editingEventMonthId=getAdminMonth()?.id;
+  document.getElementById('event-form-wrap').style.display='block';
+  if(id){
+    const m=getAdminMonth();
+    const ev=m.events.find(e=>e.id===id);
+    document.getElementById('event-form-title').textContent='Edit event';
+    document.getElementById('e-name').value=ev.name;
+    document.getElementById('e-type').value=ev.type;
+    document.getElementById('e-date-start').value=ev.date;
+    document.getElementById('e-date-end').value=ev.dateEnd||'';
+    document.getElementById('e-color').value=ev.color;
+    document.getElementById('e-loc').value=ev.location;
+    document.getElementById('e-desc').value=ev.desc;
+  } else {
+    document.getElementById('event-form-title').textContent='Add event';
+    ['e-name','e-type','e-date-start','e-date-end','e-loc','e-desc'].forEach(i=>document.getElementById(i).value='');
+    document.getElementById('e-color').value='#a855f7';
+  }
+}
+function closeEventForm(){ document.getElementById('event-form-wrap').style.display='none'; editingEventId=null; }
+
+function saveEvent(){
+  const name=document.getElementById('e-name').value.trim();
+  const dateStart=parseInt(document.getElementById('e-date-start').value);
+  if(!name||isNaN(dateStart)){alert('Please fill in name and start day.');return;}
+  const dateEnd=parseInt(document.getElementById('e-date-end').value)||dateStart;
+  const data={
+    name, type:document.getElementById('e-type').value.trim()||'EVENT',
+    date:dateStart, dateEnd,
+    color:document.getElementById('e-color').value,
+    location:document.getElementById('e-loc').value.trim(),
+    desc:document.getElementById('e-desc').value.trim(),
+  };
+  const m=MONTHS.find(m=>m.id===editingEventMonthId);
+  if(editingEventId){
+    const idx=m.events.findIndex(e=>e.id===editingEventId);
+    m.events[idx]={...m.events[idx],...data};
+  } else {
+    m.events.push({id:uid(),...data});
+  }
+  closeEventForm();
+  renderAdminEvents();
+  renderCalendar();
+}
+function deleteEvent(monthId,eventId){
+  if(!confirm('Delete this event?'))return;
+  const m=MONTHS.find(m=>m.id===monthId);
+  m.events=m.events.filter(e=>e.id!==eventId);
+  renderAdminEvents();
+  renderCalendar();
+}
+
+function openMonthForm(){ document.getElementById('month-form-wrap').style.display='block'; }
+function saveMonth(){
+  const year=parseInt(document.getElementById('m-year').value);
+  const month=parseInt(document.getElementById('m-month').value)-1;
+  const label=document.getElementById('m-label').value.trim();
+  if(isNaN(year)||isNaN(month)){alert('Please fill in year and month.');return;}
+  const mNames=['JANUARY','FEBRUARY','MARCH','APRIL','MAY','JUNE','JULY','AUGUST','SEPTEMBER','OCTOBER','NOVEMBER','DECEMBER'];
+  MONTHS.push({id:uid(),year,month,label:label||`${mNames[month]} ${year}`,events:[]});
+  document.getElementById('month-form-wrap').style.display='none';
+  renderAdminMonthSelect();
+  document.getElementById('admin-month-select').value=MONTHS[MONTHS.length-1].id;
+  renderAdminEvents();
+}
+
+// ══════════════════════════════════════════════════════
+// REBUILD PUBLIC SITE after admin changes
+// ══════════════════════════════════════════════════════
+function rebuildPublicSite(){
+  buildHeroPills();
+  buildFilters();
+  buildMapMarkers();
+  renderCalendar();
+}
+
+// ══════════════════════════════════════════════════════
+// EXPORT
+// ══════════════════════════════════════════════════════
+function generateExport(){
+  const catsJson = JSON.stringify(CATEGORIES, null, 2);
+  const placesJson = JSON.stringify(PLACES, null, 2);
+  const monthsJson = JSON.stringify(MONTHS, null, 2);
+
+  // Read current page HTML and replace the data section
+  const fullHtml = document.documentElement.outerHTML;
+  const marker1 = '// ██████  A T A   (edit here to update the site)';
+  const marker2 = '// -- ADMIN PASSWORD (change this!) --'
+
+
+  const newDataBlock = 'let CATEGORIES = ' + catsJson + ';\n\nlet PLACES = ' + placesJson + ';\n\nlet MONTHS = ' + monthsJson + ';\n\n';
+  const start = fullHtml.indexOf(marker1);
+  const end = fullHtml.indexOf(marker2);
+  const newHtml = fullHtml.slice(0, start) + newDataBlock + fullHtml.slice(end);
+  document.getElementById('code-preview').textContent = newHtml.slice(0, 300) + '\n\n... [full file] ...';
+  document.getElementById('export-preview').style.display = 'block';
+  document.getElementById('export-preview').dataset.full = newHtml;
+}
+function copyExport(){
+  const html = document.getElementById('export-preview').dataset.full;
+  navigator.clipboard.writeText(html).then(()=>{
+    const ok = document.getElementById('copy-ok');
+    ok.classList.add('show');
+    setTimeout(()=>ok.classList.remove('show'), 2500);
+  });
+}
+
+// ══════════════════════════════════════════════════════
+// INIT
+// ══════════════════════════════════════════════════════
+buildHeroPills();
+buildFilters();
+initMap();
+renderCalendar();
+// Load places from Supabase
+loadPlacesFromSupabase();
+
+// Init Google Places when API is ready
+function tryInitGooglePlaces() {
+  if (typeof google !== 'undefined' && google.maps && google.maps.places) {
+    initGooglePlaces();
+  } else {
+    setTimeout(tryInitGooglePlaces, 300);
+  }
+}
+setTimeout(tryInitGooglePlaces, 500);
+
+// Nav highlight
+const navObserver = new IntersectionObserver(entries=>{
+  entries.forEach(e=>{
+    if(e.isIntersecting){
+      document.getElementById('nav-map')?.classList.remove('active');
+      document.getElementById('nav-plan')?.classList.remove('active');
+      if(e.target.id==='map-section') document.getElementById('nav-map')?.classList.add('active');
+      if(e.target.id==='planning-section') document.getElementById('nav-plan')?.classList.add('active');
+    }
+  });
+},{threshold:0.3});
+document.querySelectorAll('#map-section,#planning-section').forEach(s=>navObserver.observe(s));
+
+// ══════════════════════════════════════════════════════
+// GOOGLE PLACES — Auto search + photo + coords
+// ══════════════════════════════════════════════════════
+let placesService = null;
+let googleMapsReady = false;
+
+function initGooglePlaces() {
+  googleMapsReady = true;
+  const dummyMap = new google.maps.Map(document.createElement('div'), {
+    center: { lat: 52.52, lng: 13.40 }, zoom: 12
+  });
+  placesService = new google.maps.places.PlacesService(dummyMap);
+
+  // Setup Autocomplete on the search input
+  const input = document.getElementById('g-search');
+  if (!input) return;
+  const autocomplete = new google.maps.places.Autocomplete(input, {
+    fields: ['name', 'formatted_address', 'geometry', 'photos', 'place_id'],
+    componentRestrictions: { country: 'de' },
+    types: ['establishment'],
+  });
+  autocomplete.addListener('place_changed', () => {
+    const place = autocomplete.getPlace();
+    if (!place.geometry) {
+      alert('No details for this place. Try selecting from the dropdown.');
+      return;
+    }
+    fillPlaceForm(place);
+  });
+  console.log('Google Places + Autocomplete ready');
+}
+
+function fillPlaceForm(place) {
+  document.getElementById('f-name').value = place.name || '';
+  document.getElementById('f-addr').value = place.formatted_address || '';
+  document.getElementById('f-lat').value = place.geometry.location.lat();
+  document.getElementById('f-lng').value = place.geometry.location.lng();
+
+  if (place.photos && place.photos.length > 0) {
+    const photoUrl = place.photos[0].getUrl({ maxWidth: 800, maxHeight: 600 });
+    document.getElementById('f-img').value = photoUrl;
+    previewImg(photoUrl);
+  }
+
+  const hint = document.querySelector('#place-form-wrap .form-hint');
+  if (hint) {
+    const orig = hint.textContent;
+    hint.textContent = '✅ Fields filled from Google! Add your tip and save.';
+    hint.style.color = 'var(--green)';
+    setTimeout(() => { hint.textContent = orig; hint.style.color = ''; }, 3000);
+  }
+}
+
+function searchGooglePlace() {
+  // With autocomplete, search is triggered by typing — this button is a fallback hint
+  const input = document.getElementById('g-search');
+  if (!input.value.trim()) { alert('Start typing a place name and select from the dropdown.'); return; }
+  alert('Select a suggestion from the dropdown that appears while typing ✨');
+}
+
+
+// ══════════════════════════════════════════════════════
+// SUGGESTIONS — Player form + Google Sheets via Apps Script
+// ══════════════════════════════════════════════════════
+
+function openSuggestModal() {
+  // Populate category select
+  const sel = document.getElementById('s-cat');
+  sel.innerHTML = CATEGORIES.map(c => `<option value="${c.id}">${c.emoji} ${c.label}</option>`).join('');
+  document.getElementById('suggest-modal').classList.remove('hidden');
+  document.getElementById('suggest-form-content').style.display = 'block';
+  document.getElementById('suggest-success').style.display = 'none';
+  document.getElementById('suggest-error').textContent = '';
+  ['s-player','s-name','s-addr','s-comment'].forEach(id => document.getElementById(id).value = '');
+}
+
+function closeSuggestModal() {
+  document.getElementById('suggest-modal').classList.add('hidden');
+}
+
+async function submitSuggestion() {
+  const player  = document.getElementById('s-player').value.trim();
+  const name    = document.getElementById('s-name').value.trim();
+  const cat     = document.getElementById('s-cat').value;
+  const addr    = document.getElementById('s-addr').value.trim();
+  const comment = document.getElementById('s-comment').value.trim();
+
+  if (!player || !name) {
+    document.getElementById('suggest-error').textContent = 'Please fill in your name and the place name.';
+    return;
+  }
+
+  const btn = event.target;
+  btn.textContent = '⏳ Sending...';
+  btn.disabled = true;
+
+  const data = {
+    action: 'add',
+    timestamp: new Date().toISOString(),
+    player, name, cat, addr, comment,
+    status: 'pending'
+  };
+
+  try {
+    if (APPS_SCRIPT_URL && APPS_SCRIPT_URL !== 'https://script.google.com/macros/s/AKfycbyBqEjtihEAtRuhTYCp_euM593oMFm88o3JSmMXPOg-ufwhdJW4Sjcs1jllANDEch9s7A/exec') {
+      await fetch(APPS_SCRIPT_URL, {
+        method: 'POST',
+        mode: 'no-cors',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
+      });
+    } else {
+      // Fallback: store in localStorage for demo
+      const saved = JSON.parse(localStorage.getItem('suggestions') || '[]');
+      saved.push({...data, id: uid()});
+      localStorage.setItem('suggestions', JSON.stringify(saved));
+    }
+    btn.textContent = 'Send suggestion 🚀';
+    btn.disabled = false;
+    document.getElementById('suggest-form-content').style.display = 'none';
+    document.getElementById('suggest-success').style.display = 'block';
+  } catch(e) {
+    btn.textContent = 'Send suggestion 🚀';
+    btn.disabled = false;
+    document.getElementById('suggest-error').textContent = 'Error sending. Please try again.';
+  }
+}
+
+// Close modal on overlay click
+document.getElementById('suggest-modal').addEventListener('click', function(e) {
+  if (e.target === this) closeSuggestModal();
+});
+
+// ── ADMIN: Load suggestions from Sheets / localStorage ──
+async function loadSuggestions() {
+  const loading = document.getElementById('suggestions-loading');
+  const list = document.getElementById('suggestions-list');
+  loading.style.display = 'block';
+  list.innerHTML = '';
+
+  let suggestions = [];
+
+  try {
+    if (APPS_SCRIPT_URL && APPS_SCRIPT_URL !== 'https://script.google.com/macros/s/AKfycbyBqEjtihEAtRuhTYCp_euM593oMFm88o3JSmMXPOg-ufwhdJW4Sjcs1jllANDEch9s7A/exec') {
+      const res = await fetch(APPS_SCRIPT_URL + '?action=get');
+      suggestions = await res.json();
+    } else {
+      // Fallback: localStorage
+      suggestions = JSON.parse(localStorage.getItem('suggestions') || '[]');
+    }
+  } catch(e) {
+    suggestions = JSON.parse(localStorage.getItem('suggestions') || '[]');
+  }
+
+  loading.style.display = 'none';
+  const pending = suggestions.filter(s => s.status === 'pending');
+
+  // Update badge
+  const badge = document.getElementById('suggestions-badge');
+  if (pending.length > 0) { badge.style.display = 'inline'; badge.textContent = pending.length; }
+  else { badge.style.display = 'none'; }
+
+  if (!suggestions.length) {
+    list.innerHTML = '<p style="color:var(--muted);font-size:.9rem">No suggestions yet. Players can suggest places using the button on the site.</p>';
+    return;
+  }
+
+  list.innerHTML = suggestions.map((s, i) => {
+    const c = getCat(s.cat);
+    const date = s.timestamp ? new Date(s.timestamp).toLocaleDateString('en-GB') : '—';
+    const statusColor = s.status === 'pending' ? 'var(--gold)' : s.status === 'approved' ? 'var(--green)' : 'var(--muted)';
+    const statusLabel = s.status === 'pending' ? '⏳ Pending' : s.status === 'approved' ? '✅ Approved' : '❌ Rejected';
+    return `<div class="suggestion-card">
+      <div class="suggestion-card-body">
+        <div style="display:flex;align-items:center;justify-content:space-between;margin-bottom:.3rem">
+          <div class="suggestion-card-name">${s.name}</div>
+          <span style="font-size:.75rem;font-weight:600;color:${statusColor}">${statusLabel}</span>
+        </div>
+        <div class="suggestion-card-meta">
+          👤 ${s.player} &nbsp;·&nbsp; ${c.emoji} ${c.label} &nbsp;·&nbsp; 📅 ${date}
+          ${s.addr ? `&nbsp;·&nbsp; 📍 ${s.addr}` : ''}
+        </div>
+        ${s.comment ? `<div class="suggestion-card-comment">"${s.comment}"</div>` : ''}
+        ${s.status === 'pending' ? `
+        <div class="suggestion-card-actions">
+          <button class="btn-approve" onclick="approveSuggestion(${i})">✅ Add to map</button>
+          <button class="btn-reject"  onclick="rejectSuggestion(${i})">❌ Reject</button>
+        </div>` : ''}
+      </div>
+    </div>`;
+  }).join('');
+}
+
+function approveSuggestion(idx) {
+  const suggestions = JSON.parse(localStorage.getItem('suggestions') || '[]');
+  const s = suggestions[idx];
+  if (!s) return;
+
+  // Add to PLACES
+  PLACES.push({
+    id: uid(), cat: s.cat,
+    name: s.name, addr: s.addr || '',
+    tip: s.comment || `Suggested by ${s.player}`,
+    img: '', lat: 52.52, lng: 13.40  // Default Berlin center — edit coords in admin after
+  });
+
+  // Mark as approved
+  suggestions[idx].status = 'approved';
+  localStorage.setItem('suggestions', JSON.stringify(suggestions));
+
+  rebuildPublicSite();
+  renderAdminPlaces();
+  loadSuggestions();
+  alert(`✅ "${s.name}" added to the map! Don't forget to set the correct coordinates in the Addresses tab.`);
+}
+
+function rejectSuggestion(idx) {
+  if (!confirm('Reject this suggestion?')) return;
+  const suggestions = JSON.parse(localStorage.getItem('suggestions') || '[]');
+  suggestions[idx].status = 'rejected';
+  localStorage.setItem('suggestions', JSON.stringify(suggestions));
+  loadSuggestions();
+}
+
+
+// ══════════════════════════════════════════════════════
+// SEARCH
+// ══════════════════════════════════════════════════════
+let searchQuery = '';
+
+function handleSearch(val) {
+  searchQuery = val.trim().toLowerCase();
+  document.getElementById('search-clear').style.display = searchQuery ? 'block' : 'none';
+  applyFilters();
+}
+
+function clearSearch() {
+  document.getElementById('map-search').value = '';
+  searchQuery = '';
+  document.getElementById('search-clear').style.display = 'none';
+  applyFilters();
+}
+
+function applyFilters() {
+  let visible = 0;
+  mapMarkers.forEach(({ marker, card, cat, place }) => {
+    const matchCat = activeFilter === 'all' || cat === activeFilter;
+    const searchFields = [
+      place.name, place.addr, place.tip,
+      getCat(place.cat).label
+    ].join(' ').toLowerCase();
+    const matchSearch = !searchQuery || searchFields.includes(searchQuery);
+    const show = matchCat && matchSearch;
+    show ? marker.addTo(leafletMap) : leafletMap.removeLayer(marker);
+    card.classList.toggle('hidden', !show);
+    if (show) visible++;
+  });
+
+  // Update count
+  const countEl = document.getElementById('search-count');
+  if (searchQuery) {
+    countEl.textContent = visible + ' result' + (visible !== 1 ? 's' : '') + ' for "' + searchQuery + '"';
+  } else {
+    countEl.textContent = '';
+  }
+}
+
+</script>
+</body>
+</html>
